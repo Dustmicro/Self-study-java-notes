@@ -1,0 +1,36 @@
+Timer是用于管理在后台执行的延迟任务或周期性任务，其中的任务使用java.util.TimerTask表示。任务的执行方式有两种：
+按固定速率执行：即scheduleAtFixedRate的两个重载方法
+按固定延迟执行：即schedule的4个重载方法
+具体差别会在后面详细说明。
+我们要实现一个定时任务，只需要实现TimerTask的run方法即可。每一个任务都有下一次执行时间nextExecutionTime（毫秒），如果是周期性的任务，
+那么每次执行都会更新这个时间为下一次的执行时间，当nextExecutionTime小于当前时间时，都会执行它。
+一、使用方式
+Timer的具体使用方法非常简单，比如：
+
+       Timer timer = new Timer();
+        timer.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("Timer is running");
+            }
+        }, 2000);
+
+上面这个定时任务表示在2秒后开始执行，只执行一次。当然还可以执行周期性任务，只需要添加schedule的第三个参数period，如：
+
+        Timer timer = new Timer();
+        timer. scheduleAtFixedRate(new TimerTask() {
+            @Override
+            public void run() {
+                System.out.println("Timer is running");
+            }
+        }, 2000, 5000);
+
+表示2秒后开始执行，然后每隔5秒执行一次。
+二、Timer的缺陷
+1、由于执行任务的线程只有一个，所以如果某个任务的执行时间过长，那么将破坏其他任务的定时精确性。如一个任务每1秒执行一次，而另一个任务执行
+   一次需要5秒，那么如果是固定速率的任务，那么会在5秒这个任务执行完成后连续执行5次，而固定延迟的任务将丢失4次执行。
+2、如果执行某个任务过程中抛出了异常，那么执行线程将会终止，导致Timer中的其他任务也不能再执行。
+3、Timer使用的是绝对时间，即是某个时间点，所以它执行依赖系统的时间，如果系统时间修改了的话，将导致任务可能不会被执行。
+三、更好的替代方法
+   由于Timer存在上面说的这些缺陷，在JDK1.5中，我们可以使用ScheduledThreadPoolExecutor来代替它，使用Executors.newScheduledThreadPool工厂方
+   法或使用ScheduledThreadPoolExecutor的构造函数来创建定时任务，它是基于线程池的实现，不会存在Timer存在的上述问题，当线程数量为1时，它相当于Timer。
